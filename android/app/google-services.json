@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "147502081550",
+    "project_id": "sipatka-f718e",
+    "storage_bucket": "sipatka-f718e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:147502081550:android:6621403786d56ad7d77e5f",
+        "android_client_info": {
+          "package_name": "com.example.sipatka"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBiI10d2F7-sXjb1iDNYSYBkutzLEWMLUY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

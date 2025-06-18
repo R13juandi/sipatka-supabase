@@ -1,0 +1,1 @@
+C:\Users\Wild.ANT\Documents\flutter_firebase\build\app\intermediates\cxx\RelWithDebInfo\1i2c4h2h\obj\arm64-v8a

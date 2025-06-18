@@ -1,0 +1,47 @@
+name: sipatka
+description: Sistem Pembayaran SPP TK An-Naafi'Nur
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  provider: ^6.0.5
+  shared_preferences: ^2.2.2
+  intl: ^0.18.1
+  http: ^1.2.1
+  url_launcher: ^6.2.1
+  image_picker: ^1.0.4
+  #Maps_flutter: ^2.5.0  # INI YANG BENAR
+
+  # --- DEPENDENSI FIREBASE & FITUR LANJUTAN ---
+  firebase_core: ^3.1.1
+  firebase_auth: ^5.1.2
+  cloud_firestore: ^5.0.2
+  firebase_storage: ^12.1.1
+  firebase_messaging: ^15.0.2
+  cloud_functions: ^5.0.2
+  flutter_local_notifications: ^17.2.1
+  fl_chart: ^0.68.0
+  # ---------------------------------------------
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+  # fonts:
+  #   - family: Poppins
+  #     fonts:
+  #       - asset: fonts/Poppins-Regular.ttf
+  #       - asset: fonts/Poppins-Bold.ttf
+  #         weight: 700

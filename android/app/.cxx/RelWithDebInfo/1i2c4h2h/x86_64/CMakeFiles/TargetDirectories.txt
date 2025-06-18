@@ -1,0 +1,2 @@
+C:/Users/Wild.ANT/Documents/flutter_firebase/android/app/.cxx/RelWithDebInfo/1i2c4h2h/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/Wild.ANT/Documents/flutter_firebase/android/app/.cxx/RelWithDebInfo/1i2c4h2h/x86_64/CMakeFiles/rebuild_cache.dir
