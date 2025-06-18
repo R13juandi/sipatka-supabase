@@ -1,9 +1,11 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:sipatka/providers/auth_provider.dart';
-import 'package:sipatka/services/notification_service.dart';
-import 'package:sipatka/utils/app_theme.dart';
-import 'register_screen.dart';
+import 'package:sipatka/main.dart';
+import 'package:sipatka/screens/admin/admin_main_screen.dart';
+import 'package:sipatka/screens/auth/forgot_password_screen.dart';
+import 'package:sipatka/screens/user/user_main_screen.dart';
+import 'package:sipatka/utils/helpers.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,11 +15,55 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   bool _obscurePassword = true;
+
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+    
+    try {
+      final response = await supabase.auth.signInWithPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      if (response.user != null && mounted) {
+        final userId = response.user!.id;
+        
+        final roleResponse = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', userId)
+            .maybeSingle();
+
+        if (roleResponse == null) {
+          if (mounted) {
+            showErrorSnackBar(context, 'Data profil pengguna tidak ditemukan. Silakan hubungi admin.');
+            await supabase.auth.signOut();
+          }
+          setState(() => _isLoading = false);
+          return;
+        }
+        
+        if (!mounted) return;
+        if (roleResponse['role'] == 'admin') {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminMainScreen()));
+        } else {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const UserMainScreen()));
+        }
+      }
+    } on AuthException catch (e) {
+        if(mounted) showErrorSnackBar(context, e.message);
+    } catch (e) {
+        if(mounted) showErrorSnackBar(context, 'Terjadi kesalahan tidak terduga.');
+    } finally {
+        if(mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,57 +74,29 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: 40),
-                Center(
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(
-                      Icons.school,
-                      size: 50,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 50),
+                // Menggunakan Icon karena logo.png tidak ada di proyek
+                const Icon(Icons.payment, size: 100, color: Colors.teal),
+                const SizedBox(height: 20),
                 const Text(
-                  'Selamat Datang',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
-                  ),
+                  'Selamat Datang di SIPATKA',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const Text(
-                  'Masuk ke akun SIPATKA Anda',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppTheme.textSecondary,
-                  ),
+                  'Masuk untuk melanjutkan',
+                  style: TextStyle(color: Colors.grey),
                 ),
                 const SizedBox(height: 40),
                 TextFormField(
                   controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Email',
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    prefixIcon: Icon(Icons.email_outlined),
                   ),
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Email tidak boleh kosong';
-                    }
-                    return null;
-                  },
+                  validator:
+                      (val) => val!.isEmpty ? 'Email tidak boleh kosong' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -88,44 +106,55 @@ class _LoginScreenState extends State<LoginScreen> {
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword
-                          ? Icons.visibility
-                          : Icons.visibility_off),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed:
+                          () => setState(
+                            () => _obscurePassword = !_obscurePassword,
+                          ),
                     ),
                   ),
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Password tidak boleh kosong';
-                    }
-                    return null;
-                  },
+                  validator:
+                      (val) =>
+                          val!.isEmpty ? 'Password tidak boleh kosong' : null,
                 ),
                 const SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _login,
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Masuk', style: TextStyle(fontSize: 16)),
+                    child:
+                        _isLoading
+                            ? const CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            )
+                            : const Text('Masuk'),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 Center(
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const RegisterScreen()),
-                      );
-                    },
-                    child: const Text('Belum punya akun? Daftar di sini'),
+                  child: RichText(
+                    text: TextSpan(
+                      text: 'Mengalami masalah? ',
+                      style: const TextStyle(color: Colors.grey, fontFamily: 'Poppins'),
+                      children: [
+                        TextSpan(
+                          text: 'Lupa Password',
+                          style: const TextStyle(
+                            color: Colors.teal, // Menggunakan warna tema
+                            fontWeight: FontWeight.bold,
+                          ),
+                          recognizer:
+                              TapGestureRecognizer()
+                                ..onTap = () {
+                                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()));
+                                },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -134,76 +163,5 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
-  }
-
-  // --- FUNGSI LOGIN DENGAN DEBUG PRINT ---
-  Future<void> _login() async {
-    // Langkah 1: Validasi form
-    print("[DEBUG] Tombol login ditekan.");
-    if (!_formKey.currentState!.validate()) {
-      print("[DEBUG] Form tidak valid, proses berhenti.");
-      return;
-    }
-    print("[DEBUG] Form valid.");
-
-    setState(() => _isLoading = true);
-
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-    print("[DEBUG] Mencoba login dengan email: $email");
-
-    // Langkah 2: Memanggil provider
-    final authProvider = context.read<AuthProvider>();
-    print("[DEBUG] SEBELUM memanggil authProvider.login()...");
-
-    final bool success = await authProvider.login(email, password);
-
-    print("[DEBUG] SETELAH memanggil authProvider.login(). Hasil 'success': $success");
-
-    // Langkah 3: Pengecekan setelah login
-    if (!mounted) {
-      print("[DEBUG] Widget sudah tidak ter-mount. Menghentikan proses.");
-      return;
-    }
-
-    setState(() => _isLoading = false);
-
-    if (success) {
-      print("[DEBUG] Login di UI dianggap BERHASIL (success == true).");
-      final userRole = authProvider.userRole;
-      print("[DEBUG] Role pengguna yang didapat dari provider: '$userRole'");
-
-      // Langkah 4: Simpan Token Notifikasi
-      if (authProvider.userModel != null) {
-        print("[DEBUG] Mencoba menyimpan token notifikasi...");
-        await NotificationService()
-            .saveTokenToFirestore(authProvider.userModel!.uid);
-        print("[DEBUG] Selesai menyimpan token notifikasi.");
-      } else {
-        print("[DEBUG] Gagal menyimpan token, userModel null.");
-      }
-
-      // Langkah 5: Navigasi berdasarkan Role
-      if (userRole == 'admin') {
-        print("[DEBUG] Role adalah 'admin'. Menavigasi ke /admin_dashboard...");
-        Navigator.pushReplacementNamed(context, '/admin_dashboard');
-      } else {
-        print("[DEBUG] Role BUKAN 'admin'. Menavigasi ke /dashboard...");
-        Navigator.pushReplacementNamed(context, '/dashboard');
-      }
-    } else {
-      print("[DEBUG] Login di UI dianggap GAGAL (success == false). Tetap di halaman login.");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Login gagal. Periksa kembali kredensial Anda.')),
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
   }
 }
